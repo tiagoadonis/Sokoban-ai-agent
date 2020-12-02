@@ -62,6 +62,10 @@ class SokobanNode:
     def __repr__(self):
         return str(self)
 
+    def in_parent(self,state):
+        if self.state == state:
+            return True
+
 # Árvore de Pesquisa
 class SokobanTree:
     # Construtor
@@ -69,7 +73,7 @@ class SokobanTree:
         self.problem = problem
         root = SokobanNode(problem.initial, None, 0, problem.domain.heuristic(problem.initial, problem.goal))
         self.open_nodes = [root]
-        self.solution = root
+        self.solution = None
 
     # Obter o caminho (sequencia de estados) da raiz ate um nó
     def get_path(self, node):
@@ -77,6 +81,7 @@ class SokobanTree:
             return []
         # Cria uma lista com o path desde a raiz até ao destino
         path = self.get_path(node.parent)
+
         # print("NODE.STATE[0]: "+str(node.state[0]))
         # print("NODE.PARENT.STATE[0]: "+str(node.parent.state[0]))
         # print("DIF: "+str(list(map(sub, node.state[0], node.parent.state[0]))))
@@ -110,7 +115,7 @@ class SokobanTree:
         #         print("PATH: "+str(path))
         #         return path
 
-        print("PATH: "+str(path))
+        #print("PATH: "+str(path))
 
         return path
 
@@ -120,14 +125,15 @@ class SokobanTree:
             node = self.open_nodes.pop(0)
             if self.problem.goal_test(node.state):
                 self.solution = node
-                # print("ACHOU O CAMINHO")
+                #print("ACHOU O CAMINHO")
                 return self.get_path(node)
             lnewnodes = []
             for a in self.problem.domain.actions(node.state):
                 newstate = self.problem.domain.result(node.state, a)
+                #print("NEWSTATE: "+str(newstate))
                 newnode = SokobanNode(newstate, node, self.problem.domain.cost(node.state, a), self.problem.domain.heuristic(newstate, self.problem.goal))
                 # Previne a criação de ciclos
-                if newstate not in self.get_path(node):
+                if not node.in_parent(newnode.state):
                     lnewnodes += [newnode]
             self.add_to_open(lnewnodes)
         return None

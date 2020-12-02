@@ -4,7 +4,6 @@ import json
 import logging
 
 from mapa import Map, Tiles
-from consts import GameStatus
 
 logger = logging.getLogger("Game")
 logger.setLevel(logging.DEBUG)
@@ -14,9 +13,10 @@ TIMEOUT = 3000
 GAME_SPEED = 10
 
 
-def reduce_score(puzzles, moves, pushes, steps, box_on_goal):
+def reduce_score(score):
     """Convert tuple into 1-dimension score."""
-    return 10000 * puzzles + 1000 * box_on_goal - 100 * pushes - steps
+    moves, pushes, steps = score
+    return moves + pushes + steps
 
 
 class Game:
@@ -24,7 +24,6 @@ class Game:
 
     def __init__(self, level=1, timeout=TIMEOUT, player=None):
         logger.info("Game(level=%s)", level)
-        self.puzzles = 0 #puzzles completed
         self.level = level
         if player:
             self._running = True
@@ -64,7 +63,7 @@ class Game:
     @property
     def score(self):
         """Calculus of the current score."""
-        return self.puzzles, self._moves, self._pushes, self._total_steps + self._step, self.map.on_goal
+        return self._moves, self._pushes, self._total_steps + self._step
 
     def stop(self):
         """Stop the game."""
@@ -74,11 +73,9 @@ class Game:
 
     def next_level(self, level):
         """Update all state variables to a new level."""
-        self.puzzles += 1
         self._total_steps += self._step
         self._step = 0
         self._lastkeypress = ""
-        self._papertrail += "," 
         self.level = level
         try:
             self.map = Map(f"levels/{level}.xsb")
@@ -134,7 +131,7 @@ class Game:
     def update_keeper(self):
         """Update the location of the Keeper."""
         if self._lastkeypress == "":
-            return GameStatus.NO_OPERATION
+            return
         try:
             # Update position
             self.move(self.map.keeper, self._lastkeypress)
@@ -149,9 +146,6 @@ class Game:
         if self.map.completed:
             logger.info("Level %s completed", self.level)
             self.next_level(self.level + 1)
-            return GameStatus.NEW_MAP
-
-        return GameStatus.RUNNING
 
     async def next_frame(self):
         """Calculate next frame."""
@@ -168,7 +162,7 @@ class Game:
         if self._step % 100 == 0:
             logger.debug("[%s] SCORE %s", self._step, self.score)
 
-        game_status = self.update_keeper()
+        self.update_keeper()
 
         self._state = {
             "player": self._player_name,
@@ -178,8 +172,6 @@ class Game:
             "keeper": self.map.keeper,
             "boxes": self.map.boxes,
         }
-
-        return game_status
 
     @property
     def state(self):

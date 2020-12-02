@@ -13,8 +13,8 @@ import requests
 from requests import RequestException
 import websockets
 
-from consts import MAX_HIGHSCORES, GameStatus
-from game import Game, reduce_score, TIMEOUT
+from consts import MAX_HIGHSCORES
+from game import Game, reduce_score
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -51,12 +51,12 @@ class GameServer:
         """Update highscores, storing to file."""
         logger.debug("Save highscores")
         logger.info(
-            "FINAL SCORE <%s>: %s puzzles with %s moves and %s pushes in %s steps, currently %s boxes on goal",
+            "FINAL SCORE <%s>: %s moves and %s pushes in %s steps",
             self.current_player.name,
             *score,
         )
 
-        self._highscores.append((self.current_player.name, reduce_score(*score),))
+        self._highscores.append((self.current_player.name, reduce_score(score),))
         self._highscores = sorted(self._highscores, key=lambda s: s[1])[:MAX_HIGHSCORES]
 
         with open(HIGHSCORE_FILE, "w") as outfile:
@@ -125,12 +125,7 @@ class GameServer:
                     game_record["papertrail"] = self.game.papertrail
 
                 while self.game.running:
-                    game_status = await self.game.next_frame()
-
-                    if game_status == GameStatus.NEW_MAP:
-                        game_info = self.game.info()
-                        await self.send_info(game_info)
-
+                    await self.game.next_frame()
                     state = self.game.state
                     await self.current_player.ws.send(state)
                     if self.viewers:
@@ -149,7 +144,7 @@ class GameServer:
             finally:
                 try:
                     if self.grading:
-                        game_record["puzzles"], game_record["total_moves"], game_record["total_pushes"], game_record["total_steps"], game_record["box_on_goal"] = self.game.score
+                        game_record["score"] = reduce(add, self.game.score, 0)
                         game_record["papertrail"] = self.game.papertrail
                         game_record["level"] = self.game.level
                         requests.post(self.grading, json=game_record)
@@ -168,12 +163,13 @@ if __name__ == "__main__":
     parser.add_argument("--level", help="start on level", type=int, default=1)
     parser.add_argument("--seed", help="Seed number", type=int, default=0)
     parser.add_argument(
-        "--timeout", help="Timeout after this amount of steps", type=int, default=TIMEOUT
+        "--timeout", help="Timeout after this amount of steps", type=int, default=3000
     )
     parser.add_argument(
         "--grading-server",
         help="url of grading server",
-        default="http://bomberman-aulas.ws.atnog.av.it.pt/game",
+        default=None,
+        # TODO        default="http://sokoban-aulas.ws.atnog.av.it.pt/game",
     )
     args = parser.parse_args()
 

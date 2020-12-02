@@ -214,11 +214,11 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 # print("------------------------RESULT-------------------------")
                 # domain.result(state, "w")
 
-                newState = list(domain.state)
-                newState[0] = [2,5]
+                newState = tuple(tuple(i) for i in domain.state)
+                newState = ((2,5), [(1,3), (3,4)])
                 
                 print("NEW STATE: "+str(newState))
-                problem = SearchProblem(domain, domain.state, tuple(newState))
+                problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), newState)
                 
                 #print("PROBLEM GOAL: "+str(problem.goal[0]))
                 
