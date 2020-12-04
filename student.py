@@ -81,44 +81,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 #     elif action == 'd':
                 #         return (x_pos-1, y_pos)
 
-                # if (len(boxesNotInGoal) > 0):
-                #     for boxes in boxesNotInGoal:
-                #         corner = preventDeadlock(boxes)        
-                #         problem = SearchProblem(domain, sokoban, corner)
-                #         path = SokobanTree(problem).search()
-                #         print("PATH: "+str(path))
-
-                # for boxes in boxesNotInGoal:
-                #     problem = SearchProblem(domain, boxes, emptyGoals.pop(0))
-                #     pathBoxToGoal = SokobanTree(problem).search()
-                #     print("PATH BOX TO GOAL: "+str(pathBoxToGoal))
-
-                #     print("FIRST STEP: "+str(pathBoxToGoal[0]))
-                    
-                    # newPos = domain.result(boxes, pathBoxToGoal[0])            
-                    # print("BOX GOES TO: "+str(newPos))
-
-                # newPos = preventDeadlock(boxesNotInGoal.pop(0))
-                # print("VAI PARA -> "+str(newPos))
-
-                # problem = SearchProblem(domain, sokoban, newPos)
-                # path = SokobanTree(problem).search()
-                # print("CAMINHO: "+str(path))
-
-                # nextPos = domain.result(sokoban, path[0])
-                # print("NEXT POS: "+str(nextPos))
-
-                # actList = domain.actions(sokoban)
-
-                # newActlist = possibleToMove(sokoban, actList, boxes)
-                # print("TECLAS DISPONIVEIS: "+str(newActlist))
-
-                # blocked = nextPosIsBlocked(boxes, nextPos)
-                # print("NEXT POSITION IS BLOCKED: "+str(blocked))
-
-                # if (blocked):
-                #     path = list(reversed(path))
-
                 # Retorna todas as posições de deadlock do mapa
                 # A caixa não pode ir para uma destas posições
                 # TODO: 
@@ -167,60 +129,13 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 corners = getDeadlockPositions(realWalls, floors)
                 print("REAL WALLS: "+str(realWalls))
-                print("CORNERS: "+str(corners))
-
-                # Verifica se a posição passada é uma posição de deadlock
-                # def originateDeadlock(deadlockPos, state):
-                #     for pos in deadlockPos:
-                #         if pos[0] == state[0] and pos[1] == state[1]:
-                #             return True
-                #     return False                  
-
-                # for box in boxesNotInGoal:
-                #     for goal in emptyGoals:
-                #         problem = SearchProblem(domain, box, goal)
-                #         pathBoxToGoal = SokobanTree(problem).search()
-                #         print("PATH BOX TO GOAL: "+str(pathBoxToGoal))
-                #         # Verifica se ao mover a caixa não cria uma situação de deadlock
-                #         movePosBox = domain.result(box, pathBoxToGoal[0])
-                #         deadlock = originateDeadlock(corners, movePosBox)
-                #         # Se criar uma posição de deadlock tem que gerar outro caminho
-                #         if deadlock == True:
-                #             # dada a posição -> devolve as teclas disponíveis a partir dessa posição
-                #             # TODO
-                #             actList = domain.actions(box)
-                #             print("ACTLIST: "+str(actList))
-                #         # Caso o caminho não crie uma posição de deadlock
-                #         else:
-                #             # Posição para onde o sokoban tem que se deslocar para mover a caixa para a direção pretendida
-                #             newPos = moveBox(box, pathBoxToGoal[0])
-                #             print("SOKOBAN VAI PARA -> "+str(newPos))
-                #             # Verifica se a posição para onde o sokoban tem que se deslocar está bloqueada ou não
-                #             print("NEW POS IS BLOCKED: "+str(mapa.is_blocked(newPos)))
-                #             if mapa.is_blocked(newPos) == True:
-                #                 # Se a posição para onde o sokoban tem que se deslocar estiver bloqueada é necessário encontrar
-                #                 # outra posição
-                #                 actList = domain.actions(box)
-                #                 print("ACTLIST: "+str(actList))
-                #                 actList.remove(pathBoxToGoal[0])
-                #                 print("NEW ACTLIST: "+str(actList))
-                #                 # TODO
-                #                 # Ver se a nova posição cria um estado de deadlock ou se está disponível        
-                                    
-
-                # problem = SearchProblem(domain, sokoban, newPos)
-                # path = SokobanTree(problem).search()
-
-                # print("------------------------RESULT-------------------------")
-                # domain.result(state, "w")
+                print("CORNERS: "+str(corners))                 
 
                 newState = tuple(tuple(i) for i in domain.state)
-                newState = ((2,5), [(1,3), (3,4)])
+                newState = ((1,2), [(1,3), (3,4)])
                 
                 print("NEW STATE: "+str(newState))
                 problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), newState)
-                
-                #print("PROBLEM GOAL: "+str(problem.goal[0]))
                 
                 pathTest = SokobanTree(problem).search()
                 print("PATH TO (2,5): "+str(pathTest))
