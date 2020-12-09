@@ -39,12 +39,7 @@ class SearchProblem:
 
     # Verifica se já se encontra no objetivo
     def goal_test(self, state):
-        # todas as caixas -> mapa.on_goal
-        
-        boxesOnGoal = domain.mapa.on_goal
-        print("Boxes on goal: "+str(boxesOnGoal))
-
-        return state == self.goal
+        return len(self.domain.boxes) == self.domain.mapa.on_goal
 
 # Nós da árvore de pesquisa do Sokoban
 class SokobanNode:

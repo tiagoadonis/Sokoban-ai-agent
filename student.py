@@ -35,7 +35,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print("Sokoban Pos: "+str(sokoban))
 
                 # Localização das caixas
-                boxes = domain.boxes
+                boxes = tuple(tuple(i) for i in domain.boxes)
                 print("Boxes: "+str(boxes))
 
                 # Caixas nos diamantes (apenas retorna o número de caixas no objetivo, não a localização)
@@ -130,12 +130,22 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 corners = getDeadlockPositions(realWalls, floors)
                 print("REAL WALLS: "+str(realWalls))
                 print("CORNERS: "+str(corners))                 
-
-                newState = tuple(tuple(i) for i in domain.state)
-                newState = ((2,5), [(1,3), (3,4)])
                 
-                print("NEW STATE: "+str(newState))
-                problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), newState)
+                goal = []
+                if boxesOnGoal == None:                   
+                    goal += emptyGoals
+                else:
+                    goal += emptyGoals
+                    for box in boxes:                    
+                        if box not in boxesNotInGoal:
+                            print("CAIXA -> "+str(box))
+                            print("TÁ LÁ DENTRO")
+                            print("GOAL: "+str(goal))
+                            goal += box
+                
+                print("GOAL: "+str(goal))
+
+                problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), goal)
                 
                 pathTest = SokobanTree(problem).search(False)
                 print("PATH TO (2,5): "+str(pathTest))
