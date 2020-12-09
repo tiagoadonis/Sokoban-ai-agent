@@ -130,19 +130,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 corners = getDeadlockPositions(realWalls, floors)
                 print("REAL WALLS: "+str(realWalls))
                 print("CORNERS: "+str(corners))                 
-                
-                goal = []
-                if boxesOnGoal == None:                   
-                    goal += emptyGoals
-                else:
-                    goal += emptyGoals
-                    for box in boxes:                    
-                        if box not in boxesNotInGoal:
-                            print("CAIXA -> "+str(box))
-                            print("TÁ LÁ DENTRO")
-                            print("GOAL: "+str(goal))
-                            goal += box
-                
+    
+                goal = mapa.filter_tiles([Tiles.GOAL, Tiles.MAN_ON_GOAL, Tiles.BOX_ON_GOAL])
                 print("GOAL: "+str(goal))
 
                 problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), goal)
@@ -322,11 +311,17 @@ class SokobanDomain(SearchDomain):
     # TODO
     # Para cada caixa ver qual o diamante mais próximo e somar as distancias
     def heuristic(self, state, goal):
-        count = 0
-        sokobanInitial = state[0]
-        sokobanFinal = goal[0]
-        return ((sokobanFinal[0] - sokobanInitial[0])**2 + (sokobanFinal[1] - sokobanInitial[1])**2)**(1/2)
-        
+        print("HEURISTIC------------------------")
+        print("GOAL: "+str(goal))
+        print("CAIXAS: "+str(state[1]))
+
+        min = 1000
+        for box in state[1]:
+            for g in goal:
+                dist = ( (box[0] - goal[0])**2 + (box[1] - goal[1])**2 )**(1/2)
+                if (dist < min):
+                    min = dist
+
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
 # $ NAME='arrumador' python3 client.py

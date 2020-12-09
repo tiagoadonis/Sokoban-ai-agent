@@ -76,7 +76,7 @@ class SokobanTree:
         self.solution = None
 
     # Obter o caminho (sequencia de estados) da raiz ate um nó
-    def get_path(self, node, sokoban):
+    def get_path(self, node):
         move = []
         if node.parent == None:
             return []
@@ -98,12 +98,12 @@ class SokobanTree:
         return path
 
     # Procurar a Solução
-    def search(self,sokoban):
+    def search(self):
         while self.open_nodes != []:
             node = self.open_nodes.pop(0)
             if self.problem.goal_test(node.state):
                 self.solution = node
-                return self.get_path(node,sokoban)
+                return self.get_path(node)
             lnewnodes = []
             for a in self.problem.domain.actions(node.state):
                 newstate = self.problem.domain.result(node.state, a)
