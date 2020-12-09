@@ -132,12 +132,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print("CORNERS: "+str(corners))                 
 
                 newState = tuple(tuple(i) for i in domain.state)
-                newState = ((1,2), [(1,3), (3,4)])
+                newState = ((2,5), [(1,3), (3,4)])
                 
                 print("NEW STATE: "+str(newState))
                 problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), newState)
                 
-                pathTest = SokobanTree(problem).search()
+                pathTest = SokobanTree(problem).search(False)
                 print("PATH TO (2,5): "+str(pathTest))
 
                 print("-------------------------------------------------------")

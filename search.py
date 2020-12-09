@@ -39,6 +39,11 @@ class SearchProblem:
 
     # Verifica se já se encontra no objetivo
     def goal_test(self, state):
+        # todas as caixas -> mapa.on_goal
+        
+        boxesOnGoal = domain.mapa.on_goal
+        print("Boxes on goal: "+str(boxesOnGoal))
+
         return state == self.goal
 
 # Nós da árvore de pesquisa do Sokoban
@@ -76,16 +81,12 @@ class SokobanTree:
         self.solution = None
 
     # Obter o caminho (sequencia de estados) da raiz ate um nó
-    def get_path(self, node):
+    def get_path(self, node, sokoban):
+        move = []
         if node.parent == None:
             return []
         # Cria uma lista com o path desde a raiz até ao destino
-        path = self.get_path(node.parent)
-
-        # print("NODE.STATE[0]: "+str(node.state[0]))
-        # print("NODE.PARENT.STATE[0]: "+str(node.parent.state[0]))
-        # print("DIF: "+str(list(map(sub, node.state[0], node.parent.state[0]))))
-        # print("------------------------------------------------------------")
+        path = self.get_path(node.parent, sokoban)
         move = list(map(sub, node.state[0], node.parent.state[0]))
         if (move == [1, 0]):
             key = 'd'
@@ -98,35 +99,16 @@ class SokobanTree:
         else:
             key = ''
         path += [key]
-        
-        # tmp = path 
-        # print("TMP: "+str(tmp))
-        # newState = node.state
-        # while tmp != []:
-        #     print("ENTROU WHILE")
-        #     keyTmp = tmp.pop(0)
-        #     print("KEY: "+str(keyTmp))
-        #     newState = self.problem.domain.result(newState, keyTmp)
-        #     print("NEW STATE: "+str(newState))
-        #     print("NEW STATE[0]: "+str(newState[0]))
-        #     print("SELF.PROBLEM.GOAL[0]: "+str(self.problem.goal[0]))
-        #     if(newState[0][0] == self.problem.goal[0][0] and newState[0][1] == self.problem.goal[0][1]):
-        #         print("ENTROU IF!!!!!!!!!!!!!")
-        #         print("PATH: "+str(path))
-        #         return path
-
         #print("PATH: "+str(path))
-
         return path
 
     # Procurar a Solução
-    def search(self):
+    def search(self,sokoban):
         while self.open_nodes != []:
             node = self.open_nodes.pop(0)
             if self.problem.goal_test(node.state):
                 self.solution = node
-                #print("ACHOU O CAMINHO")
-                return self.get_path(node)
+                return self.get_path(node,sokoban)
             lnewnodes = []
             for a in self.problem.domain.actions(node.state):
                 newstate = self.problem.domain.result(node.state, a)
