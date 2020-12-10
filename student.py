@@ -316,11 +316,15 @@ class SokobanDomain(SearchDomain):
         print("CAIXAS: "+str(state[1]))
 
         min = 1000
+        heur = 0
         for box in state[1]:
             for g in goal:
-                dist = ( (box[0] - goal[0])**2 + (box[1] - goal[1])**2 )**(1/2)
+                dist = ( (box[0] - g[0])**2 + (box[1] - g[1])**2 )**(1/2) #cordenada x + cordenada y
                 if (dist < min):
-                    min = dist
+                    min = dist      #distancia minima de uma caixa ao diamante
+            heur += min             #Soma á huristica o valor minimo de uma caixa, para todas as iteraçẽs das caixas
+            min = 1000              #volta a colocar o minimo a 1000 para que se possa encontrar uma nova distancia minima para outra caixa
+        return heur
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
