@@ -135,9 +135,10 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print("GOAL: "+str(goal))
 
                 problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), goal)
-                
-                pathTest = SokobanTree(problem).search(False)
-                print("PATH TO (2,5): "+str(pathTest))
+                print("DOMAIN STATE: "+str(domain.state))
+
+                pathTest = SokobanTree(problem).search()
+                print("PATH: "+str(pathTest))
 
                 print("-------------------------------------------------------")
                 if path == []:
@@ -164,25 +165,43 @@ class SokobanDomain(SearchDomain):
     # Dada uma posição (state), deve retornar as teclas disponiveis 
     # (só aquelas em que se pode carregar para se ir para uma posição livre)
     def actions(self, state):
+        print("-----------------------------------------------------")
+        print("STATE DENTRO DO ACTIONS: "+str(state))
         actlist = []
         x_sokoban, y_sokoban = state[0]
+        
+        #-----------------------------------------------------------------------------------------------
         # Se a posição em cima do sokoban for uma parede
         if (not self.mapa.is_blocked((x_sokoban, y_sokoban - 1))):
+            #print("POSIÇÃO DESBLOQUEADA")
             count = 0
             for box in state[1]:
+                #print("CICLO DAS CAIXAS")
                 x_box, y_box = box
+
+                print("CAIXA DO PRIMEIRO CICLO: "+str(box))
+
                 # Se a posição em cima do sokoban for uma caixa
                 if ((x_sokoban == x_box) and (y_sokoban - 1 == y_box)):
                     # Se a posição em cima da caixa anterior for uma parede
                     if (self.mapa.is_blocked((x_sokoban, y_sokoban - 2))):
                         count += 1
                     for box2 in state[1]:
+                        #print("SEGUNDO CICLO DAS CAIXAS")
                         x_box2, y_box2 = box2
+
+                        print("CAIXA 1 -> "+str(box))
+                        print("CAIXA 2 -> "+str(box2))
+
                         # Se a posição em cima da caixa anterior for outra caixa
                         if ((x_box2 == x_box) and (y_box2 - 1 == y_box)):
+                            print("CAIXA EM CIMA DE OUTRA CAIXA!!!!!!!!!")
                             count += 1
+            #print("COUNT: "+str(count))
             if (count == 0):
                 actlist += ["w"]
+            #-------------------------------------------------------------------------------------
+
         # Se a posição à esquerda do sokoban for uma parede
         if (not self.mapa.is_blocked((x_sokoban - 1, y_sokoban))):
             count = 0
@@ -234,11 +253,12 @@ class SokobanDomain(SearchDomain):
                             count += 1
             if (count == 0):
                 actlist += ["d"]
-
+        print("ACTLIST: "+str(actlist))
         return actlist
 
     # Dada uma posição (state) e tecla (action), retornar a nova posição atualizada no state
     def result(self, state, action):
+        #print("STATE INSIDE RESULT: "+str(state))
         x_sokoban, y_sokoban = state[0]
         if action == "w":
             boxes = []
@@ -307,23 +327,20 @@ class SokobanDomain(SearchDomain):
     def cost(self, state, action):
         return 1
 
-    # Definição da heuristica
-    # TODO
     # Para cada caixa ver qual o diamante mais próximo e somar as distancias
     def heuristic(self, state, goal):
-        print("HEURISTIC------------------------")
-        print("GOAL: "+str(goal))
-        print("CAIXAS: "+str(state[1]))
-
         min = 1000
         heur = 0
         for box in state[1]:
             for g in goal:
-                dist = ( (box[0] - g[0])**2 + (box[1] - g[1])**2 )**(1/2) #cordenada x + cordenada y
+                dist = ( (box[0] - g[0])**2 + (box[1] - g[1])**2 )**(1/2) 
                 if (dist < min):
-                    min = dist      #distancia minima de uma caixa ao diamante
-            heur += min             #Soma á huristica o valor minimo de uma caixa, para todas as iteraçẽs das caixas
-            min = 1000              #volta a colocar o minimo a 1000 para que se possa encontrar uma nova distancia minima para outra caixa
+                    # Distância mínima de uma caixa ao diamante
+                    min = dist      
+            # Soma á heuristica o valor mínimo de uma caixa, para todas as iteraçẽs das caixas
+            heur += min             
+            # Volta a colocar o mínimo a 1000 para que se possa encontrar uma nova distância mínima para outra caixa
+            min = 1000              
         return heur
 
 # DO NOT CHANGE THE LINES BELLOW
