@@ -186,6 +186,7 @@ class SokobanDomain(SearchDomain):
                     # Se a posição em cima da caixa anterior for uma parede
                     if (self.mapa.is_blocked((x_sokoban, y_sokoban - 2))):
                         count += 1
+                    """
                     for box2 in state[1]:
                         #print("SEGUNDO CICLO DAS CAIXAS")
                         x_box2, y_box2 = box2
@@ -197,6 +198,18 @@ class SokobanDomain(SearchDomain):
                         if ((x_box2 == x_box) and (y_box2 - 1 == y_box)):
                             print("CAIXA EM CIMA DE OUTRA CAIXA!!!!!!!!!")
                             count += 1
+                    """
+                    for box2 in state[1]: 
+                        x_box2, y_box2 = box2
+                        print("SEGUNDO CICLO DAS CAIXAS")
+                        print("CAIXA 1 -> "+str(box))
+                        print("CAIXA 2 -> "+str(box2)) #basicamente isto só está a correr para um 1 ciclo do for da linha 178
+                        
+                        if((box2 !=box)):
+                            # Se a posição em cima da caixa anterior for outra caixa
+                            if ((x_box2 == x_box) and (y_box2 - 1 == y_box))or ((x_box2 == x_box) and(y_box2 == y_box - 1)):#adicionei isto porque pode estar a caixa1 em cima e a 2 em baixo e vice versa
+                                print("CAIXA EM CIMA DE OUTRA CAIXA!!!!!!!!!")
+                                count += 1
             #print("COUNT: "+str(count))
             if (count == 0):
                 actlist += ["w"]
