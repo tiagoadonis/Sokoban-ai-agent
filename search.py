@@ -109,11 +109,12 @@ class SokobanTree:
             lnewnodes = []
             for a in self.problem.domain.actions(node.state):
                 newstate = self.problem.domain.result(node.state, a)
-                # print("NEWSTATE: "+str(newstate))
+                print("NEWSTATE: "+str(newstate))
                 newnode = SokobanNode(newstate, node, self.problem.domain.cost(node.state, a), self.problem.domain.heuristic(newstate, self.problem.goal))
                 # print("NEWNODE: "+str(newnode))
                 # Previne a criação de ciclos
                 if not node.in_parent(newnode.state):
+                    #print("NEWNODE.STATE INSIDE IF: "+str(newnode.state))
                     lnewnodes += [newnode]
             self.add_to_open(lnewnodes)
         return None

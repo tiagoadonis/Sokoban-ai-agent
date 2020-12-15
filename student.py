@@ -137,8 +137,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), goal)
                 print("DOMAIN STATE: "+str(domain.state))
 
-                pathTest = SokobanTree(problem).search()
-                print("PATH: "+str(pathTest))
+                path = SokobanTree(problem).search()
+                print("PATH: "+str(path))
 
                 print("-------------------------------------------------------")
                 if path == []:
@@ -169,8 +169,7 @@ class SokobanDomain(SearchDomain):
         print("STATE DENTRO DO ACTIONS: "+str(state))
         actlist = []
         x_sokoban, y_sokoban = state[0]
-        
-        #-----------------------------------------------------------------------------------------------
+
         # Se a posição em cima do sokoban for uma parede
         if (not self.mapa.is_blocked((x_sokoban, y_sokoban - 1))):
             #print("POSIÇÃO DESBLOQUEADA")
@@ -178,43 +177,22 @@ class SokobanDomain(SearchDomain):
             for box in state[1]:
                 #print("CICLO DAS CAIXAS")
                 x_box, y_box = box
-
-                print("CAIXA DO PRIMEIRO CICLO: "+str(box))
-
+                #print("CAIXA DO PRIMEIRO CICLO: "+str(box))
                 # Se a posição em cima do sokoban for uma caixa
                 if ((x_sokoban == x_box) and (y_sokoban - 1 == y_box)):
                     # Se a posição em cima da caixa anterior for uma parede
                     if (self.mapa.is_blocked((x_sokoban, y_sokoban - 2))):
                         count += 1
-                    """
-                    for box2 in state[1]:
-                        #print("SEGUNDO CICLO DAS CAIXAS")
-                        x_box2, y_box2 = box2
-
-                        print("CAIXA 1 -> "+str(box))
-                        print("CAIXA 2 -> "+str(box2))
-
-                        # Se a posição em cima da caixa anterior for outra caixa
-                        if ((x_box2 == x_box) and (y_box2 - 1 == y_box)):
-                            print("CAIXA EM CIMA DE OUTRA CAIXA!!!!!!!!!")
-                            count += 1
-                    """
                     for box2 in state[1]: 
                         x_box2, y_box2 = box2
-                        print("SEGUNDO CICLO DAS CAIXAS")
-                        print("CAIXA 1 -> "+str(box))
-                        print("CAIXA 2 -> "+str(box2)) #basicamente isto só está a correr para um 1 ciclo do for da linha 178
-                        
-                        if((box2 !=box)):
+                        if((box2 != box)):
                             # Se a posição em cima da caixa anterior for outra caixa
-                            if ((x_box2 == x_box) and (y_box2 - 1 == y_box))or ((x_box2 == x_box) and(y_box2 == y_box - 1)):#adicionei isto porque pode estar a caixa1 em cima e a 2 em baixo e vice versa
-                                print("CAIXA EM CIMA DE OUTRA CAIXA!!!!!!!!!")
+                            if ((x_box2 == x_box) and (y_box2 - 1 == y_box) or (x_box2 == x_box) and (y_box2 == y_box - 1)):
+                                #print("CAIXA EM CIMA DE OUTRA CAIXA!!!!!!!!!--------------------------------------------")
                                 count += 1
             #print("COUNT: "+str(count))
             if (count == 0):
                 actlist += ["w"]
-            #-------------------------------------------------------------------------------------
-
         # Se a posição à esquerda do sokoban for uma parede
         if (not self.mapa.is_blocked((x_sokoban - 1, y_sokoban))):
             count = 0
@@ -227,9 +205,10 @@ class SokobanDomain(SearchDomain):
                         count += 1
                     for box2 in state[1]:
                         x_box2, y_box2 = box2
-                        # Se a posição à esquerda da caixa anterior for outra caixa
-                        if ((x_box2 - 1 == x_box) and (y_box2 == y_box)):
-                            count += 1
+                        if((box2 != box)):
+                            # Se a posição à esquerda da caixa anterior for outra caixa
+                            if ((x_box2 - 1 == x_box) and (y_box2 == y_box) or (x_box2 == x_box - 1) and (y_box2 == y_box)):
+                                count += 1
             if (count == 0):
                 actlist += ["a"]
         # Se a posição em baixo do sokoban for uma parede
@@ -244,9 +223,10 @@ class SokobanDomain(SearchDomain):
                         count += 1
                     for box2 in state[1]:
                         x_box2, y_box2 = box2
-                        # Se a posição em baixo da caixa anterior for outra caixa
-                        if ((x_box2 == x_box) and (y_box2 + 1 == y_box)):
-                            count += 1
+                        if((box2 != box)):
+                            # Se a posição em baixo da caixa anterior for outra caixa
+                            if ((x_box2 == x_box) and (y_box2 + 1 == y_box) or (x_box2 == x_box) and (y_box2 == y_box + 1)):
+                                count += 1
             if (count == 0):
                 actlist += ["s"]
         # Se a posição à direita do sokoban for uma parede
@@ -261,9 +241,10 @@ class SokobanDomain(SearchDomain):
                         count += 1
                     for box2 in state[1]:
                         x_box2, y_box2 = box2
-                        # Se a posição à direita da caixa anterior for outra caixa
-                        if ((x_box2 + 1 == x_box) and (y_box2 == y_box)):
-                            count += 1
+                        if((box2 != box)):
+                            # Se a posição à direita da caixa anterior for outra caixa
+                            if ((x_box2 + 1 == x_box) and (y_box2 == y_box) or (x_box2 == x_box + 1) and (y_box2 == y_box)):
+                                count += 1
             if (count == 0):
                 actlist += ["d"]
         print("ACTLIST: "+str(actlist))
@@ -288,6 +269,7 @@ class SokobanDomain(SearchDomain):
                 i += 1
             # Atualiza a posição do sokoban
             state = tuple((newSokobanPos, boxes))
+            #print("STATE com 'w': "+str(state))
         elif action == "a":
             boxes = []
             i = 0
@@ -303,6 +285,7 @@ class SokobanDomain(SearchDomain):
                 i += 1
             # Atualiza a posição do sokoban
             state = tuple((newSokobanPos, boxes))
+            #print("STATE com 'a': "+str(state))
         elif action == "s":
             boxes = []
             i = 0
@@ -317,7 +300,8 @@ class SokobanDomain(SearchDomain):
                     boxes.insert(i, (x_box, y_box))                    
                 i += 1
             # Atualiza a posição do sokoban
-            state = tuple((newSokobanPos, boxes))
+            state = tuple((newSokobanPos, boxes))            
+            #print("STATE com 's': "+str(state))
         elif action == "d":
             boxes = []
             i = 0
@@ -333,7 +317,9 @@ class SokobanDomain(SearchDomain):
                 i += 1
             # Atualiza a posição do sokoban
             state = tuple((newSokobanPos, boxes))
+            #print("STATE com 'd': "+str(state))
 
+        #print("RETURN STATE FROM RESULT: "+str(state))
         return state
 
     # Custo de cada movimento
