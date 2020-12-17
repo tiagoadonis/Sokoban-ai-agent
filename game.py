@@ -15,8 +15,7 @@ GAME_SPEED = 10
 
 def reduce_score(score):
     """Convert tuple into 1-dimension score."""
-    moves, pushes, steps = score
-    return moves + pushes + steps
+    return 50000 * puzzles + 5000 * box_on_goal - 100 * pushes - steps
 
 
 class Game:
