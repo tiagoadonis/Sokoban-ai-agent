@@ -39,7 +39,7 @@ class SearchProblem:
 
     # Verifica se já se encontra no objetivo
     def goal_test(self, state):
-        # print("ENTROU GOAL TEST -> "+str(len(self.domain.boxes) == self.domain.mapa.on_goal))
+        #print("ENTROU GOAL TEST -> "+str(len(self.domain.boxes) == self.domain.mapa.on_goal))
         return len(self.domain.boxes) == self.domain.mapa.on_goal
 
 # Nós da árvore de pesquisa do Sokoban
@@ -78,12 +78,11 @@ class SokobanTree:
 
     # Obter o caminho (sequencia de estados) da raiz ate um nó
     def get_path(self, node):
-        print("ENTROU GET PATH")
         move = []
         if node.parent == None:
             return []
         # Cria uma lista com o path desde a raiz até ao destino
-        path = self.get_path(node.parent, sokoban)
+        path = self.get_path(node.parent)
         move = list(map(sub, node.state[0], node.parent.state[0]))
         if (move == [1, 0]):
             key = 'd'
@@ -113,9 +112,9 @@ class SokobanTree:
                 newnode = SokobanNode(newstate, node, self.problem.domain.cost(node.state, a), self.problem.domain.heuristic(newstate, self.problem.goal))
                 # print("NEWNODE: "+str(newnode))
                 # Previne a criação de ciclos
-                if not node.in_parent(newnode.state):
-                    #print("NEWNODE.STATE INSIDE IF: "+str(newnode.state))
-                    lnewnodes += [newnode]
+                if newstate not in self.get_path(node):
+                    print("CICLO!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    lnewnodes.append(newnode)
             self.add_to_open(lnewnodes)
         return None
 

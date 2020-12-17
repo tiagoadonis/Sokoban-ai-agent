@@ -127,10 +127,46 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     if(count == 0):
                         realWalls += [wall]                     
 
-                corners = getDeadlockPositions(realWalls, floors)
+                # DeadlockPos apenas tem os cantos do mapa
+                deadlockPos = getDeadlockPositions(realWalls, floors)
                 print("REAL WALLS: "+str(realWalls))
-                print("CORNERS: "+str(corners))                 
+                print("CORNERS: "+str(deadlockPos))                 
     
+                def deadlockPosBoxes(boxes, walls):
+                    deadlock = []
+                    for box in boxes:
+                        # Se á esquerda da caixa é uma parede
+                        if (mapa.is_blocked((box[0] - 1, box[1]))):
+                            if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
+                                deadlock += [(box[0], box[1] - 1)] 
+                            if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
+                                deadlock += [(box[0], box[1] + 1)]       
+                        # Se á direita da caixa é uma parede
+                        if (mapa.is_blocked((box[0] + 1, box[1]))):
+                            if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
+                                deadlock += [(box[0], box[1] - 1)] 
+                            if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
+                                deadlock += [(box[0], box[1] + 1)]      
+                        # Se em cima da caixa é uma parede
+                        if (mapa.is_blocked((box[0], box[1] - 1))):
+                            if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
+                                deadlock += [(box[0] - 1, box[1])] 
+                            if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
+                                deadlock += [(box[0] + 1, box[1])]      
+                        # Se em baixo da caixa é uma parede
+                        if (mapa.is_blocked((box[0], box[1] + 1))):
+                            if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
+                                deadlock += [(box[0] - 1, box[1])]
+                            if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
+                                deadlock += [(box[0] + 1, box[1])]    
+                    return deadlock
+
+                boxesDeadlock = deadlockPosBoxes(domain.boxes, realWalls)
+                deadlockPos += boxesDeadlock
+
+                print("ALL DEADLOCK POSITIONS: "+str(deadlockPos))
+                domain.setDeadlockPositions(deadlockPos)
+
                 goal = mapa.filter_tiles([Tiles.GOAL, Tiles.MAN_ON_GOAL, Tiles.BOX_ON_GOAL])
                 print("GOAL: "+str(goal))
 
@@ -144,6 +180,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 if path == []:
                     continue
                 else:
+                    #print("PATH: "+str(path[0]))
                     await websocket.send(
                         json.dumps({"cmd": "key", "key": path.pop(0)})
                     )
@@ -170,16 +207,16 @@ class SokobanDomain(SearchDomain):
         actlist = []
         x_sokoban, y_sokoban = state[0]
 
-        # Se a posição em cima do sokoban for uma parede
+        # Se a posição em cima do sokoban não for uma parede
         if (not self.mapa.is_blocked((x_sokoban, y_sokoban - 1))):
-            #print("POSIÇÃO DESBLOQUEADA")
             count = 0
             for box in state[1]:
-                #print("CICLO DAS CAIXAS")
                 x_box, y_box = box
-                #print("CAIXA DO PRIMEIRO CICLO: "+str(box))
                 # Se a posição em cima do sokoban for uma caixa
                 if ((x_sokoban == x_box) and (y_sokoban - 1 == y_box)):
+                    for deadState in self.deadlockPos:
+                        if (deadState[0] == x_box and deadState[1] == y_box - 1):
+                            count += 1
                     # Se a posição em cima da caixa anterior for uma parede
                     if (self.mapa.is_blocked((x_sokoban, y_sokoban - 2))):
                         count += 1
@@ -188,18 +225,19 @@ class SokobanDomain(SearchDomain):
                         if((box2 != box)):
                             # Se a posição em cima da caixa anterior for outra caixa
                             if ((x_box2 == x_box) and (y_box2 - 1 == y_box) or (x_box2 == x_box) and (y_box2 == y_box - 1)):
-                                #print("CAIXA EM CIMA DE OUTRA CAIXA!!!!!!!!!--------------------------------------------")
                                 count += 1
-            #print("COUNT: "+str(count))
             if (count == 0):
                 actlist += ["w"]
-        # Se a posição à esquerda do sokoban for uma parede
+        # Se a posição à esquerda do sokoban não for uma parede
         if (not self.mapa.is_blocked((x_sokoban - 1, y_sokoban))):
             count = 0
             for box in state[1]:
                 x_box, y_box = box        
                 # Se a posição à esquerda do sokoban for uma caixa
                 if ((x_sokoban - 1 == x_box) and (y_sokoban == y_box)):
+                    for deadState in self.deadlockPos:
+                        if (deadState[0] == x_box - 1 and deadState[1] == y_box):
+                            count += 1
                     # Se a posição à esquerda da caixa anterior for uma parede
                     if (self.mapa.is_blocked((x_sokoban - 2, y_sokoban))):
                         count += 1
@@ -211,13 +249,16 @@ class SokobanDomain(SearchDomain):
                                 count += 1
             if (count == 0):
                 actlist += ["a"]
-        # Se a posição em baixo do sokoban for uma parede
+        # Se a posição em baixo do sokoban não for uma parede
         if (not self.mapa.is_blocked((x_sokoban, y_sokoban + 1))):
             count = 0
             for box in state[1]:
                 x_box, y_box = box
                 # Se a posição em baixo do sokoban for uma caixa
                 if ((x_sokoban == x_box) and (y_sokoban + 1 == y_box)):
+                    for deadState in self.deadlockPos:
+                        if (deadState[0] == x_box and deadState[1] == y_box + 1):
+                            count += 1
                     # Se a posição em baixo da caixa anterior for uma parede
                     if (self.mapa.is_blocked((x_sokoban, y_sokoban + 2))):
                         count += 1
@@ -229,13 +270,16 @@ class SokobanDomain(SearchDomain):
                                 count += 1
             if (count == 0):
                 actlist += ["s"]
-        # Se a posição à direita do sokoban for uma parede
+        # Se a posição à direita do sokoban não for uma parede
         if (not self.mapa.is_blocked((x_sokoban + 1, y_sokoban))):
             count = 0
             for box in state[1]:
                 x_box, y_box = box
                 # Se a posição à direita do sokoban for uma caixa
                 if ((x_sokoban + 1 == x_box) and (y_sokoban == y_box)):
+                    for deadState in self.deadlockPos:
+                        if (deadState[0] == x_box + 1 and deadState[1] == y_box):
+                            count += 1
                     # Se a posição à direita da caixa anterior for uma parede
                     if (self.mapa.is_blocked((x_sokoban + 2, y_sokoban))):
                         count += 1
@@ -263,7 +307,7 @@ class SokobanDomain(SearchDomain):
                 # Caso o sokoban se mova e arraste uma caixa para cima
                 if ((x_sokoban == x_box) and (y_sokoban - 1 == y_box)):
                     # Atualiza a posição da caixa
-                    boxes.insert(i, (x_box, y_box - 1))
+                    boxes.insert(i, (x_box, y_box - 1))    
                 else:
                     boxes.insert(i, (x_box, y_box))
                 i += 1
@@ -279,7 +323,7 @@ class SokobanDomain(SearchDomain):
                 # Caso o sokoban se mova e arraste uma caixa para a esquerda
                 if ((x_sokoban - 1 == x_box) and (y_sokoban == y_box)):
                     # Atualiza a posição da caixa
-                    boxes.insert(i, (x_box - 1, y_box))
+                    boxes.insert(i, (x_box - 1, y_box)) 
                 else:
                     boxes.insert(i, (x_box, y_box))
                 i += 1
@@ -295,7 +339,7 @@ class SokobanDomain(SearchDomain):
                 # Caso o sokoban se mova e arraste uma caixa para baixo
                 if ((x_sokoban == x_box) and (y_sokoban + 1 == y_box)):
                     # Atualiza a posição da caixa
-                    boxes.insert(i, (x_box, y_box + 1))
+                    boxes.insert(i, (x_box, y_box + 1)) 
                 else:
                     boxes.insert(i, (x_box, y_box))                    
                 i += 1
@@ -318,7 +362,6 @@ class SokobanDomain(SearchDomain):
             # Atualiza a posição do sokoban
             state = tuple((newSokobanPos, boxes))
             #print("STATE com 'd': "+str(state))
-
         #print("RETURN STATE FROM RESULT: "+str(state))
         return state
 
@@ -341,6 +384,10 @@ class SokobanDomain(SearchDomain):
             # Volta a colocar o mínimo a 1000 para que se possa encontrar uma nova distância mínima para outra caixa
             min = 1000              
         return heur
+
+    # Para armazenar as deadlock positions
+    def setDeadlockPositions(self, deadlockPos):
+        self.deadlockPos = deadlockPos
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
