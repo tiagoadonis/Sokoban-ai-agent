@@ -161,8 +161,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                                 deadlock += [(box[0] + 1, box[1])]    
                     return deadlock
 
-                boxesDeadlock = deadlockPosBoxes(domain.boxes, realWalls)
-                deadlockPos += boxesDeadlock
+                # boxesDeadlock = deadlockPosBoxes(domain.boxes, realWalls)
+                # deadlockPos += boxesDeadlock
 
                 print("ALL DEADLOCK POSITIONS: "+str(deadlockPos))
                 domain.setDeadlockPositions(deadlockPos)
@@ -202,8 +202,8 @@ class SokobanDomain(SearchDomain):
     # Dada uma posição (state), deve retornar as teclas disponiveis 
     # (só aquelas em que se pode carregar para se ir para uma posição livre)
     def actions(self, state):
-        print("-----------------------------------------------------")
-        print("STATE DENTRO DO ACTIONS: "+str(state))
+        # print("-----------------------------------------------------")
+        #print("STATE DENTRO DO ACTIONS: "+str(state))
         actlist = []
         x_sokoban, y_sokoban = state[0]
 
@@ -291,7 +291,7 @@ class SokobanDomain(SearchDomain):
                                 count += 1
             if (count == 0):
                 actlist += ["d"]
-        print("ACTLIST: "+str(actlist))
+        #print("ACTLIST: "+str(actlist))
         return actlist
 
     # Dada uma posição (state) e tecla (action), retornar a nova posição atualizada no state

@@ -1,5 +1,6 @@
 # from abc import ABC, abstractmethod
 from operator import *
+from consts import Tiles
 
 # Dominios de pesquisa (classe abstracta) -> implementar os métodos do SearchDomain no ficheiro 'student.py'
 class SearchDomain():
@@ -39,8 +40,8 @@ class SearchProblem:
 
     # Verifica se já se encontra no objetivo
     def goal_test(self, state):
-        #print("ENTROU GOAL TEST -> "+str(len(self.domain.boxes) == self.domain.mapa.on_goal))
-        return len(self.domain.boxes) == self.domain.mapa.on_goal
+        goal = self.domain.mapa.filter_tiles([Tiles.GOAL, Tiles.MAN_ON_GOAL, Tiles.BOX_ON_GOAL])
+        return sorted(state[1]) == sorted(goal)
 
 # Nós da árvore de pesquisa do Sokoban
 class SokobanNode:
@@ -63,9 +64,12 @@ class SokobanNode:
     def __repr__(self):
         return str(self)
 
-    def in_parent(self,state):
+    def in_parent(self, state):
         if self.state == state:
             return True
+        if self.parent == None:
+            return False
+        return self.parent.in_parent(state)
 
 # Árvore de Pesquisa
 class SokobanTree:
@@ -78,6 +82,7 @@ class SokobanTree:
 
     # Obter o caminho (sequencia de estados) da raiz ate um nó
     def get_path(self, node):
+        # print("ENTROU GET PATH")
         move = []
         if node.parent == None:
             return []
@@ -102,19 +107,19 @@ class SokobanTree:
         while self.open_nodes != []:
             node = self.open_nodes.pop(0)
             if self.problem.goal_test(node.state):
-                print("ACHOU SOLUÇÃO")
+                # print("ACHOU SOLUÇÃO")
                 self.solution = node
                 return self.get_path(node)
             lnewnodes = []
             for a in self.problem.domain.actions(node.state):
                 newstate = self.problem.domain.result(node.state, a)
-                print("NEWSTATE: "+str(newstate))
-                newnode = SokobanNode(newstate, node, self.problem.domain.cost(node.state, a), self.problem.domain.heuristic(newstate, self.problem.goal))
-                # print("NEWNODE: "+str(newnode))
+                #print("NEWSTATE: "+str(newstate))
+                #newnode = SokobanNode(newstate, node, self.problem.domain.cost(node.state, a), self.problem.domain.heuristic(newstate, self.problem.goal))
                 # Previne a criação de ciclos
-                if newstate not in self.get_path(node):
-                    print("CICLO!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                    lnewnodes.append(newnode)
+                if not node.in_parent(newstate):
+                    #print("NEWNODE.STATE INSIDE IF: "+str(newnode.state))
+                    newnode = SokobanNode(newstate, node, self.problem.domain.cost(node.state, a), self.problem.domain.heuristic(newstate, self.problem.goal))
+                    lnewnodes += [newnode]
             self.add_to_open(lnewnodes)
         return None
 
