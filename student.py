@@ -14,7 +14,6 @@ async def solver(puzzle, solution):
         mapa = Map(game_properties["map"])
                 
         boxes, keeper, goal = get_grid(game_properties["map"])
-        # print("GAME PROPERTIES: "+str(game_properties))
 
         # Criar o dominio
         domain = SokobanDomain(mapa, boxes, keeper)
