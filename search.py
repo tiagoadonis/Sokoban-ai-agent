@@ -1,6 +1,7 @@
 # from abc import ABC, abstractmethod
 from operator import *
 from consts import Tiles
+import asyncio
 
 # Dominios de pesquisa (classe abstracta) -> implementar os métodos do SearchDomain no ficheiro 'student.py'
 class SearchDomain():
@@ -103,7 +104,7 @@ class SokobanTree:
         return path
 
     # Procurar a Solução
-    def search(self):
+    async def search(self):
         while self.open_nodes != []:
             node = self.open_nodes.pop(0)
             if self.problem.goal_test(node.state):
@@ -113,14 +114,12 @@ class SokobanTree:
             lnewnodes = []
             for a in self.problem.domain.actions(node.state):
                 newstate = self.problem.domain.result(node.state, a)
-                #print("NEWSTATE: "+str(newstate))
-                #newnode = SokobanNode(newstate, node, self.problem.domain.cost(node.state, a), self.problem.domain.heuristic(newstate, self.problem.goal))
                 # Previne a criação de ciclos
                 if not node.in_parent(newstate):
-                    #print("NEWNODE.STATE INSIDE IF: "+str(newnode.state))
                     newnode = SokobanNode(newstate, node, self.problem.domain.cost(node.state, a), self.problem.domain.heuristic(newstate, self.problem.goal))
                     lnewnodes += [newnode]
             self.add_to_open(lnewnodes)
+            await asyncio.sleep(0)
         return None
 
     # Define a estratégia

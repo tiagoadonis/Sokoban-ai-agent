@@ -2,28 +2,162 @@ import asyncio
 import getpass
 import json
 import os
-
 import websockets
 from mapa import Map
 from consts import Tiles
 from search import *
-
+from grid import *
 
 async def solver(puzzle, solution):
     while True:
         game_properties = await puzzle.get()
         mapa = Map(game_properties["map"])
-        print(mapa)
+                
+        boxes, keeper, goal = get_grid(game_properties["map"])
+        # print("GAME PROPERTIES: "+str(game_properties))
 
-        while True:
-            await asyncio.sleep(0)
-            break
+        # Criar o dominio
+        domain = SokobanDomain(mapa, boxes, keeper)
+        sokoban = domain.sokoban
 
-    keys = 
-    await solution.put(keys)
+        # Localização do Sokoban
+        print("Sokoban Pos: "+str(sokoban))
 
+        # Localização das caixas
+        boxes = tuple(tuple(i) for i in domain.boxes)
+        print("Boxes: "+str(boxes))
 
-async def agent_loop(server_address="localhost:8000", agent_name="student"):
+        # Caixas nos diamantes (apenas retorna o número de caixas no objetivo, não a localização)
+        boxesOnGoal = domain.mapa.on_goal
+        print("Boxes on goal: "+str(boxesOnGoal))
+
+        # Posições dos objetivos livres (objetivos onde falta colocar a caixa)
+        emptyGoals = domain.mapa.empty_goals
+        print("Empty goals: "+str(emptyGoals))
+
+        # Caixas que não estão nos objetivos
+        boxTiles = list(domain.mapa.filter_tiles(Tiles.BOX))
+        floor = list(domain.mapa.filter_tiles(Tiles.FLOOR))
+        
+        boxesNotInGoal = []
+        count = 0
+        t = ()
+
+        for i in boxTiles:
+            for j in floor:
+                if (i[0] == j[0]) and (i[1] == j[1]):
+                    count += 1
+            if(count == 0):
+                boxesNotInGoal += [i]
+            count = 0
+
+        print("Boxes Not In Goal: "+str(boxesNotInGoal))
+
+        keys = []
+        # Retorna todas as posições de deadlock do mapa
+        # A caixa não pode ir para uma destas posições
+        # TODO: 
+        # Falta calcular todas as posições entre duas posições de deadlock que estejam junto a uma parede sem um objetivo 
+        # Para o 1º nível basta os cantos
+        def getDeadlockPositions(realWalls, floors):
+            corners = []
+            for wall_1 in realWalls:
+                for wall_2 in realWalls:
+                    x = abs(wall_1[0] - wall_2[0])
+                    y = abs(wall_1[1] - wall_2[1])
+                    if (x == 1 and y == 1):
+                        corners += [(wall_1, wall_2)]
+                    
+            for a,b in corners:
+                for c,d in corners:
+                    if a == d and b == c:
+                        corners.remove((c,d)) 
+
+            cornersFloor = []
+            for corner in corners:
+                count = 0
+                for goal in emptyGoals:
+                    if corner[0][0] == goal[0] and corner[1][1] == goal[1]:
+                        count += 1
+                    if count == 0:
+                        if (corner[0][0], corner[1][1]) in floors:
+                            cornersFloor += [(corner[0][0], corner[1][1])]
+                        else:
+                            cornersFloor += [(corner[1][0], corner[0][1])] 
+
+            return cornersFloor                  
+        
+        walls = list(domain.mapa.filter_tiles(Tiles.WALL))
+        floors = list(domain.mapa.filter_tiles(Tiles.FLOOR)) 
+        
+        # A variável 'realWalls' tem as coordenadas de todas as paredes do jogo
+        realWalls = []                
+        for wall in walls:
+            count = 0
+            for floor in floors:
+                if(wall[0] == floor[0] and wall[1] == floor[1]):
+                    count += 1
+            if(count == 0):
+                realWalls += [wall]                     
+
+        # DeadlockPos apenas tem os cantos do mapa
+        deadlockPos = getDeadlockPositions(realWalls, floors)
+        print("REAL WALLS: "+str(realWalls))
+        print("CORNERS: "+str(deadlockPos))                 
+
+        def deadlockPosBoxes(boxes, walls):
+            deadlock = []
+            for box in boxes:
+                # Se á esquerda da caixa é uma parede
+                if (mapa.is_blocked((box[0] - 1, box[1]))):
+                    if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
+                        deadlock += [(box[0], box[1] - 1)] 
+                    if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
+                        deadlock += [(box[0], box[1] + 1)]       
+                # Se á direita da caixa é uma parede
+                if (mapa.is_blocked((box[0] + 1, box[1]))):
+                    if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
+                        deadlock += [(box[0], box[1] - 1)] 
+                    if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
+                        deadlock += [(box[0], box[1] + 1)]      
+                # Se em cima da caixa é uma parede
+                if (mapa.is_blocked((box[0], box[1] - 1))):
+                    if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
+                        deadlock += [(box[0] - 1, box[1])] 
+                    if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
+                        deadlock += [(box[0] + 1, box[1])]      
+                # Se em baixo da caixa é uma parede
+                if (mapa.is_blocked((box[0], box[1] + 1))):
+                    if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
+                        deadlock += [(box[0] - 1, box[1])]
+                    if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
+                        deadlock += [(box[0] + 1, box[1])]    
+            return deadlock
+
+        # boxesDeadlock = deadlockPosBoxes(domain.boxes, realWalls)
+        # deadlockPos += boxesDeadlock
+
+        print("ALL DEADLOCK POSITIONS: "+str(deadlockPos))
+        domain.setDeadlockPositions(deadlockPos)
+
+        goal = mapa.filter_tiles([Tiles.GOAL, Tiles.MAN_ON_GOAL, Tiles.BOX_ON_GOAL])
+        print("GOAL: "+str(goal))
+
+        problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), goal)
+        print("DOMAIN STATE: "+str(domain.state))
+
+        gen_task = loop.create_task(SokobanTree(problem).search())
+        await gen_task
+        array = gen_task.result()
+
+        keys = ""+"".join(array)
+
+        print("KEYS: "+str(keys))
+
+        await asyncio.sleep(0)
+        await solution.put(keys)
+
+async def agent_loop(puzzle, solution, server_address="localhost:8000", agent_name="student"):
     async with websockets.connect(f"ws://{server_address}/player") as websocket:
 
         # Receive information about static game properties
@@ -31,13 +165,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
         while True:
             try:
-
                 update = json.loads(
                     await websocket.recv()
                 ) # receive game update
 
                 if "map" in update:
-                    #we got a new level
+                    # we got a new level
                     game_properties = update
                     keys = ""
                     await puzzle.put(game_properties)
@@ -52,186 +185,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
-
                 )
-            except websockets.exceptions.ConnectionClosedOK:
-                print("Server has cleanly disconnected us")
-                return
-
-        msg = await websocket.recv()
-        game_properties = json.loads(msg)
-
-        # You can create your own map representation or use the game representation:
-        mapa = Map(game_properties["map"])
-        print(mapa)
-
-        
-
-        while True:
-            try:
-                state = json.loads(
-                    await websocket.recv()
-                )  # receive game state, this must be called timely or your game will get out of sync with the server
-
-                # ----------------------------------------------- Testes ------------------------------------------------------
-                # Criar o dominio
-                domain = SokobanDomain(mapa, state)
-                sokoban = domain.sokoban
-
-                # Localização do Sokoban
-                print("Sokoban Pos: "+str(sokoban))
-
-                # Localização das caixas
-                boxes = tuple(tuple(i) for i in domain.boxes)
-                print("Boxes: "+str(boxes))
-
-                # Caixas nos diamantes (apenas retorna o número de caixas no objetivo, não a localização)
-                boxesOnGoal = domain.mapa.on_goal
-                print("Boxes on goal: "+str(boxesOnGoal))
-
-                # Posições dos objetivos livres (objetivos onde falta colocar a caixa)
-                emptyGoals = domain.mapa.empty_goals
-                print("Empty goals: "+str(emptyGoals))
-
-                # Caixas que não estão nos objetivos
-                boxTiles = list(domain.mapa.filter_tiles(Tiles.BOX))
-                floor = list(domain.mapa.filter_tiles(Tiles.FLOOR))
-                
-                boxesNotInGoal = []
-                count = 0
-                t = ()
-
-                for i in boxTiles:
-                    for j in floor:
-                        if (i[0] == j[0]) and (i[1] == j[1]):
-                            count += 1
-                    if(count == 0):
-                        boxesNotInGoal += [i]
-                    count = 0
-
-                print("Boxes Not In Goal: "+str(boxesNotInGoal))
-
-                #path = ["s"]
-
-                # --------------------------------------------- Fim dos testes --------------------------------------------------
-                path = []
-
-                # # retorna a posição para onde o sokoban tem de ir para mover a caixa
-                # def moveBox(box,action):
-                #     x_pos, y_pos = box
-                #     if action == 'w':
-                #         return (x_pos, y_pos+1)
-                #     elif action == 's':
-                #         return (x_pos, y_pos-1)
-                #     elif action == 'a':
-                #         return (x_pos+1, y_pos)
-                #     elif action == 'd':
-                #         return (x_pos-1, y_pos)
-
-                # Retorna todas as posições de deadlock do mapa
-                # A caixa não pode ir para uma destas posições
-                # TODO: 
-                # Falta calcular todas as posições entre duas posições de deadlock que estejam junto a uma parede sem um objetivo 
-                # Para o 1º nível basta os cantos
-                def getDeadlockPositions(realWalls, floors):
-                    corners = []
-                    for wall_1 in realWalls:
-                        for wall_2 in realWalls:
-                            x = abs(wall_1[0] - wall_2[0])
-                            y = abs(wall_1[1] - wall_2[1])
-                            if (x == 1 and y == 1):
-                                corners += [(wall_1, wall_2)]
-                            
-                    for a,b in corners:
-                        for c,d in corners:
-                            if a == d and b == c:
-                                corners.remove((c,d)) 
-
-                    cornersFloor = []
-                    for corner in corners:
-                        count = 0
-                        for goal in emptyGoals:
-                            if corner[0][0] == goal[0] and corner[1][1] == goal[1]:
-                                count += 1
-                            if count == 0:
-                                if (corner[0][0], corner[1][1]) in floors:
-                                    cornersFloor += [(corner[0][0], corner[1][1])]
-                                else:
-                                    cornersFloor += [(corner[1][0], corner[0][1])] 
-
-                    return cornersFloor                  
-                
-                walls = list(domain.mapa.filter_tiles(Tiles.WALL))
-                floors = list(domain.mapa.filter_tiles(Tiles.FLOOR)) 
-                
-                # A variável 'realWalls' tem as coordenadas de todas as paredes do jogo
-                realWalls = []                
-                for wall in walls:
-                    count = 0
-                    for floor in floors:
-                        if(wall[0] == floor[0] and wall[1] == floor[1]):
-                            count += 1
-                    if(count == 0):
-                        realWalls += [wall]                     
-
-                # DeadlockPos apenas tem os cantos do mapa
-                deadlockPos = getDeadlockPositions(realWalls, floors)
-                print("REAL WALLS: "+str(realWalls))
-                print("CORNERS: "+str(deadlockPos))                 
-    
-                def deadlockPosBoxes(boxes, walls):
-                    deadlock = []
-                    for box in boxes:
-                        # Se á esquerda da caixa é uma parede
-                        if (mapa.is_blocked((box[0] - 1, box[1]))):
-                            if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
-                                deadlock += [(box[0], box[1] - 1)] 
-                            if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
-                                deadlock += [(box[0], box[1] + 1)]       
-                        # Se á direita da caixa é uma parede
-                        if (mapa.is_blocked((box[0] + 1, box[1]))):
-                            if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
-                                deadlock += [(box[0], box[1] - 1)] 
-                            if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
-                                deadlock += [(box[0], box[1] + 1)]      
-                        # Se em cima da caixa é uma parede
-                        if (mapa.is_blocked((box[0], box[1] - 1))):
-                            if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
-                                deadlock += [(box[0] - 1, box[1])] 
-                            if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
-                                deadlock += [(box[0] + 1, box[1])]      
-                        # Se em baixo da caixa é uma parede
-                        if (mapa.is_blocked((box[0], box[1] + 1))):
-                            if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
-                                deadlock += [(box[0] - 1, box[1])]
-                            if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
-                                deadlock += [(box[0] + 1, box[1])]    
-                    return deadlock
-
-                # boxesDeadlock = deadlockPosBoxes(domain.boxes, realWalls)
-                # deadlockPos += boxesDeadlock
-
-                print("ALL DEADLOCK POSITIONS: "+str(deadlockPos))
-                domain.setDeadlockPositions(deadlockPos)
-
-                goal = mapa.filter_tiles([Tiles.GOAL, Tiles.MAN_ON_GOAL, Tiles.BOX_ON_GOAL])
-                print("GOAL: "+str(goal))
-
-                problem = SearchProblem(domain, tuple(tuple(i) for i in domain.state), goal)
-                print("DOMAIN STATE: "+str(domain.state))
-
-                path = SokobanTree(problem).search()
-                print("PATH: "+str(path))
-
-                print("-------------------------------------------------------")
-                if path == []:
-                    continue
-                else:
-                    #print("PATH: "+str(path[0]))
-                    await websocket.send(
-                        json.dumps({"cmd": "key", "key": path.pop(0)})
-                    )
-
             except websockets.exceptions.ConnectionClosedOK:
                 print("Server has cleanly disconnected us")
                 return
@@ -239,10 +193,10 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 # Sokoban Domain
 class SokobanDomain(SearchDomain):
     # Construtor
-    def __init__(self, mapa, state):
+    def __init__(self, mapa, boxes, keeper):
         self.mapa = mapa
-        self.sokoban = state["keeper"]
-        self.boxes = state["boxes"]
+        self.sokoban = keeper
+        self.boxes = boxes
         # O estado tem que ter informação de todas as posições dos objetos (caixas e sokoban)
         self.state = tuple((self.sokoban, self.boxes))
  
@@ -443,4 +397,12 @@ loop = asyncio.get_event_loop()
 SERVER = os.environ.get("SERVER", "localhost")
 PORT = os.environ.get("PORT", "8000")
 NAME = os.environ.get("NAME", getpass.getuser())
-loop.run_until_complete(agent_loop(f"{SERVER}:{PORT}", NAME))
+
+puzzle = asyncio.Queue(loop=loop)
+solution = asyncio.Queue(loop=loop)
+
+net_task = loop.create_task(agent_loop(puzzle, solution, f"{SERVER}:{PORT}", NAME))
+solver_task = loop.create_task(solver(puzzle, solution))
+
+loop.run_until_complete(asyncio.gather(net_task, solver_task))
+loop.close()
