@@ -8,17 +8,64 @@ from mapa import Map
 from consts import Tiles
 from search import *
 
+
+async def solver(puzzle, solution):
+    while True:
+        game_properties = await puzzle.get()
+        mapa = Map(game_properties["map"])
+        print(mapa)
+
+        while True:
+            await asyncio.sleep(0)
+            break
+
+    keys = 
+    await solution.put(keys)
+
+
 async def agent_loop(server_address="localhost:8000", agent_name="student"):
     async with websockets.connect(f"ws://{server_address}/player") as websocket:
 
         # Receive information about static game properties
         await websocket.send(json.dumps({"cmd": "join", "name": agent_name}))
+
+        while True:
+            try:
+
+                update = json.loads(
+                    await websocket.recv()
+                ) # receive game update
+
+                if "map" in update:
+                    #we got a new level
+                    game_properties = update
+                    keys = ""
+                    await puzzle.put(game_properties)
+
+                if not solution.empty():
+                    keys = await solution.get()
+
+                key = ""
+                if len(keys): #we got a solution
+                    key = keys[0]
+                    keys = keys[1:]
+
+                await websocket.send(
+                    json.dumps({"cmd": "key", "key": key})
+
+                )
+            except websockets.exceptions.ConnectionClosedOK:
+                print("Server has cleanly disconnected us")
+                return
+
         msg = await websocket.recv()
         game_properties = json.loads(msg)
 
         # You can create your own map representation or use the game representation:
         mapa = Map(game_properties["map"])
         print(mapa)
+
+        
 
         while True:
             try:
