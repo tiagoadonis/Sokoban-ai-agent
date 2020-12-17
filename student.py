@@ -391,7 +391,6 @@ class SokobanDomain(SearchDomain):
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
-# $ NAME='arrumador' python3 client.py
 loop = asyncio.get_event_loop()
 SERVER = os.environ.get("SERVER", "localhost")
 PORT = os.environ.get("PORT", "8000")
