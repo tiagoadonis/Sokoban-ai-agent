@@ -9,6 +9,7 @@ def get_grid(map_lvl):
     x=y=0
     for line in mapa:
         for symbol in line:
+            
             if symbol == ".":
                 goals.append((x,y))
             if symbol == "@":

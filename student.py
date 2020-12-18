@@ -8,13 +8,19 @@ from consts import Tiles
 from search import *
 from grid import *
 
+
+ant_level = 1
 async def solver(puzzle, solution):
+    
     while True:
         game_properties = await puzzle.get()
-        mapa = Map(game_properties["map"])
-                
-        boxes, keeper, goal = get_grid(game_properties["map"])
-
+        print("GAME PROPERTIES: "+str(game_properties))
+    
+        #print(game_properties["map"])
+        print("levels/" + str(ant_level) + ".xsb")
+        mapa = Map("levels/" + str(ant_level) + ".xsb")       
+        boxes, keeper, goal = get_grid("levels/" + str(ant_level) + ".xsb")
+        
         # Criar o dominio
         domain = SokobanDomain(mapa, boxes, keeper)
         sokoban = domain.sokoban
@@ -161,7 +167,7 @@ async def agent_loop(puzzle, solution, server_address="localhost:8000", agent_na
 
         # Receive information about static game properties
         await websocket.send(json.dumps({"cmd": "join", "name": agent_name}))
-
+        global ant_level
         while True:
             try:
                 update = json.loads(
@@ -170,9 +176,17 @@ async def agent_loop(puzzle, solution, server_address="localhost:8000", agent_na
 
                 if "map" in update:
                     # we got a new level
+                    print(update)
                     game_properties = update
                     keys = ""
                     await puzzle.put(game_properties)
+
+                if "level" in update and ant_level != update["level"]:
+                    # we got a new level
+                    game_properties = update
+                    keys = ""
+                    await puzzle.put(game_properties)
+                    ant_level = update["level"]
 
                 if not solution.empty():
                     keys = await solution.get()
@@ -391,6 +405,7 @@ class SokobanDomain(SearchDomain):
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
+# $ NAME='arrumador' python3 client.py
 loop = asyncio.get_event_loop()
 SERVER = os.environ.get("SERVER", "localhost")
 PORT = os.environ.get("PORT", "8000")
@@ -402,5 +417,4 @@ solution = asyncio.Queue(loop=loop)
 net_task = loop.create_task(agent_loop(puzzle, solution, f"{SERVER}:{PORT}", NAME))
 solver_task = loop.create_task(solver(puzzle, solution))
 
-loop.run_until_complete(asyncio.gather(net_task, solver_task))
-loop.close()
+loop.run_until_complete(net_task)
