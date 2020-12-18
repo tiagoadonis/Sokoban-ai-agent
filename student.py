@@ -20,9 +20,9 @@ async def solver(puzzle, solution):
         print("levels/" + str(ant_level) + ".xsb")
         mapa = Map("levels/" + str(ant_level) + ".xsb")       
         boxes, keeper, goal = get_grid("levels/" + str(ant_level) + ".xsb")
-        
+        print(goal)
         # Criar o dominio
-        domain = SokobanDomain(mapa, boxes, keeper)
+        domain = SokobanDomain(mapa, boxes, keeper, goal)
         sokoban = domain.sokoban
 
         # Localização do Sokoban
@@ -79,6 +79,8 @@ async def solver(puzzle, solution):
                         corners.remove((c,d)) 
 
             cornersFloor = []
+            print("corner")
+            print(corners)
             for corner in corners:
                 count = 0
                 for goal in emptyGoals:
@@ -89,8 +91,20 @@ async def solver(puzzle, solution):
                             cornersFloor += [(corner[0][0], corner[1][1])]
                         else:
                             cornersFloor += [(corner[1][0], corner[0][1])] 
-
-            return cornersFloor                  
+            
+            deadlock = cornersFloor
+            print("**********************" + str(deadlock))
+            for dead in deadlock:
+                for g in emptyGoals:
+                    if(dead[0] == g[0] and dead[1] == g[1]): 
+                        print("sadfcsdlfkjsfsknf" + str(g))
+                        deadlock.remove(g)
+                        print("antes")
+                        deadlock.pop(deadlock.index(g))
+                        print(deadlock.index(g))
+            print("print deadlock antes do return ------------------"+ str(deadlock))
+            return deadlock    
+                      
         
         walls = list(domain.mapa.filter_tiles(Tiles.WALL))
         floors = list(domain.mapa.filter_tiles(Tiles.FLOOR)) 
@@ -108,36 +122,36 @@ async def solver(puzzle, solution):
         # DeadlockPos apenas tem os cantos do mapa
         deadlockPos = getDeadlockPositions(realWalls, floors)
         print("REAL WALLS: "+str(realWalls))
-        print("CORNERS: "+str(deadlockPos))                 
+        #print("CORNERS: "+str(deadlockPos))                 
 
-        def deadlockPosBoxes(boxes, walls):
-            deadlock = []
-            for box in boxes:
-                # Se á esquerda da caixa é uma parede
-                if (mapa.is_blocked((box[0] - 1, box[1]))):
-                    if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
-                        deadlock += [(box[0], box[1] - 1)] 
-                    if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
-                        deadlock += [(box[0], box[1] + 1)]       
-                # Se á direita da caixa é uma parede
-                if (mapa.is_blocked((box[0] + 1, box[1]))):
-                    if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
-                        deadlock += [(box[0], box[1] - 1)] 
-                    if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
-                        deadlock += [(box[0], box[1] + 1)]      
-                # Se em cima da caixa é uma parede
-                if (mapa.is_blocked((box[0], box[1] - 1))):
-                    if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
-                        deadlock += [(box[0] - 1, box[1])] 
-                    if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
-                        deadlock += [(box[0] + 1, box[1])]      
-                # Se em baixo da caixa é uma parede
-                if (mapa.is_blocked((box[0], box[1] + 1))):
-                    if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
-                        deadlock += [(box[0] - 1, box[1])]
-                    if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
-                        deadlock += [(box[0] + 1, box[1])]    
-            return deadlock
+        # def deadlockPosBoxes(boxes, walls):
+        #     deadlock = []
+        #     for box in boxes:
+        #         # Se á esquerda da caixa é uma parede
+        #         if (mapa.is_blocked((box[0] - 1, box[1]))):
+        #             if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
+        #                 deadlock += [(box[0], box[1] - 1)] 
+        #             if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
+        #                 deadlock += [(box[0], box[1] + 1)]       
+        #         # Se á direita da caixa é uma parede
+        #         if (mapa.is_blocked((box[0] + 1, box[1]))):
+        #             if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
+        #                 deadlock += [(box[0], box[1] - 1)] 
+        #             if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
+        #                 deadlock += [(box[0], box[1] + 1)]      
+        #         # Se em cima da caixa é uma parede
+        #         if (mapa.is_blocked((box[0], box[1] - 1))):
+        #             if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
+        #                 deadlock += [(box[0] - 1, box[1])] 
+        #             if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
+        #                 deadlock += [(box[0] + 1, box[1])]      
+        #         # Se em baixo da caixa é uma parede
+        #         if (mapa.is_blocked((box[0], box[1] + 1))):
+        #             if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
+        #                 deadlock += [(box[0] - 1, box[1])]
+        #             if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
+        #                 deadlock += [(box[0] + 1, box[1])]    
+        #     return deadlock
 
         # boxesDeadlock = deadlockPosBoxes(domain.boxes, realWalls)
         # deadlockPos += boxesDeadlock
@@ -206,12 +220,13 @@ async def agent_loop(puzzle, solution, server_address="localhost:8000", agent_na
 # Sokoban Domain
 class SokobanDomain(SearchDomain):
     # Construtor
-    def __init__(self, mapa, boxes, keeper):
+    def __init__(self, mapa, boxes, keeper, goal):
         self.mapa = mapa
         self.sokoban = keeper
         self.boxes = boxes
         # O estado tem que ter informação de todas as posições dos objetos (caixas e sokoban)
         self.state = tuple((self.sokoban, self.boxes))
+        self.goal = goal
  
     # Dada uma posição (state), deve retornar as teclas disponiveis 
     # (só aquelas em que se pode carregar para se ir para uma posição livre)
