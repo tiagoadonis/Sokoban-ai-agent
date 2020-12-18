@@ -93,16 +93,7 @@ async def solver(puzzle, solution):
                             cornersFloor += [(corner[1][0], corner[0][1])] 
             
             deadlock = cornersFloor
-            print("**********************" + str(deadlock))
-            for dead in deadlock:
-                for g in emptyGoals:
-                    if(dead[0] == g[0] and dead[1] == g[1]): 
-                        print("sadfcsdlfkjsfsknf" + str(g))
-                        deadlock.remove(g)
-                        print("antes")
-                        deadlock.pop(deadlock.index(g))
-                        print(deadlock.index(g))
-            print("print deadlock antes do return ------------------"+ str(deadlock))
+            deadlock = [d for d in deadlock if d not in emptyGoals]
             return deadlock    
                       
         
@@ -121,40 +112,7 @@ async def solver(puzzle, solution):
 
         # DeadlockPos apenas tem os cantos do mapa
         deadlockPos = getDeadlockPositions(realWalls, floors)
-        print("REAL WALLS: "+str(realWalls))
-        #print("CORNERS: "+str(deadlockPos))                 
-
-        # def deadlockPosBoxes(boxes, walls):
-        #     deadlock = []
-        #     for box in boxes:
-        #         # Se á esquerda da caixa é uma parede
-        #         if (mapa.is_blocked((box[0] - 1, box[1]))):
-        #             if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
-        #                 deadlock += [(box[0], box[1] - 1)] 
-        #             if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
-        #                 deadlock += [(box[0], box[1] + 1)]       
-        #         # Se á direita da caixa é uma parede
-        #         if (mapa.is_blocked((box[0] + 1, box[1]))):
-        #             if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
-        #                 deadlock += [(box[0], box[1] - 1)] 
-        #             if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
-        #                 deadlock += [(box[0], box[1] + 1)]      
-        #         # Se em cima da caixa é uma parede
-        #         if (mapa.is_blocked((box[0], box[1] - 1))):
-        #             if(mapa.is_blocked((box[0] - 1, box[1] - 1))):
-        #                 deadlock += [(box[0] - 1, box[1])] 
-        #             if(mapa.is_blocked((box[0] + 1, box[1] - 1))):
-        #                 deadlock += [(box[0] + 1, box[1])]      
-        #         # Se em baixo da caixa é uma parede
-        #         if (mapa.is_blocked((box[0], box[1] + 1))):
-        #             if(mapa.is_blocked((box[0] - 1, box[1] + 1))):
-        #                 deadlock += [(box[0] - 1, box[1])]
-        #             if(mapa.is_blocked((box[0] + 1, box[1] + 1))):
-        #                 deadlock += [(box[0] + 1, box[1])]    
-        #     return deadlock
-
-        # boxesDeadlock = deadlockPosBoxes(domain.boxes, realWalls)
-        # deadlockPos += boxesDeadlock
+        print("REAL WALLS: "+str(realWalls))               
 
         print("ALL DEADLOCK POSITIONS: "+str(deadlockPos))
         domain.setDeadlockPositions(deadlockPos)
@@ -231,7 +189,7 @@ class SokobanDomain(SearchDomain):
     # Dada uma posição (state), deve retornar as teclas disponiveis 
     # (só aquelas em que se pode carregar para se ir para uma posição livre)
     def actions(self, state):
-        # print("-----------------------------------------------------")
+        #print("-----------------------------------------------------")
         #print("STATE DENTRO DO ACTIONS: "+str(state))
         actlist = []
         x_sokoban, y_sokoban = state[0]
