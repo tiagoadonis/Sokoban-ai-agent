@@ -8,7 +8,6 @@ from consts import Tiles
 from search import *
 from grid import *
 
-
 ant_level = 1
 async def solver(puzzle, solution):
     
@@ -94,9 +93,49 @@ async def solver(puzzle, solution):
             
             deadlock = cornersFloor
             deadlock = [d for d in deadlock if d not in emptyGoals]
+
+            # print("DEADLOCK: "+str(deadlock))
+            # deadlockLines = []
+            # for d1 in deadlock:
+            #     print("------------------------------------------------------------")
+            #     for d2 in deadlock:
+            #         count = 0
+            #         if (d1 != d2): 
+            #             # Se o x for igual (vertical deadlock line)
+            #             if (d1[0] == d2[0]):
+            #                 x = True
+            #             # Se o y for igual (horizontal deadlock line)
+            #             elif (d1[1] == d2[1]):
+            #                 y = True
+            #         # Verificar se existe algum goal no meio da vertical deadlock line
+            #         if x == True:
+            #             for goal in emptyGoals:
+            #                 if (goal[0] == d1[0]):
+            #                     print("ENTROU VERTICAL DEADLOCK LINE")
+            #                     print(d1)
+            #                     print("GOAL: "+str(goal))
+            #                     count += 1
+            #             # É porque não existe nenhum objetivo no meio da vertical deadlock line
+            #             print("COUNT: "+str(count))
+            #             if (count == 0):
+            #                 if d2[1] > d1[1]:
+            #                     for i in range (d1[1], d2[1]):
+            #                         deadlockLines += [(d1[0], i)]
+            #         # Verificar se existe algum goal no meio da horizontal deadlock line                                
+            #         if y == True:
+            #             for goal in emptyGoals:
+            #                 if(goal[1] == d1[1]):
+            #                     count += 1
+            #             # É porque não existe nenhum objetivo no meio da horizontal deadlock line
+            #             if (count == 0):
+            #                 if d2[0] > d1[0]:
+            #                     for i in range (d1[0], d2[0]):
+            #                         deadlockLines += [(i, d1[1])]
+            # print("DEADLOCK LINES: "+str(set(deadlockLines)))
+            
+            # deadlock += set(deadlockLines)
             return deadlock    
-                      
-        
+                         
         walls = list(domain.mapa.filter_tiles(Tiles.WALL))
         floors = list(domain.mapa.filter_tiles(Tiles.FLOOR)) 
         
