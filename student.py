@@ -194,6 +194,9 @@ class SokobanDomain(SearchDomain):
         actlist = []
         x_sokoban, y_sokoban = state[0]
 
+        
+            
+
         # Se a posição em cima do sokoban não for uma parede
         if (not self.mapa.is_blocked((x_sokoban, y_sokoban - 1))):
             count = 0
@@ -278,8 +281,13 @@ class SokobanDomain(SearchDomain):
                                 count += 1
             if (count == 0):
                 actlist += ["d"]
+
+        if (self.mapa.is_blocked((x_sokoban, y_sokoban))):
+             x_sokoban, y_sokoban = state[0]
         #print("ACTLIST: "+str(actlist))
         return actlist
+
+        
 
     # Dada uma posição (state) e tecla (action), retornar a nova posição atualizada no state
     def result(self, state, action):
@@ -351,6 +359,9 @@ class SokobanDomain(SearchDomain):
             #print("STATE com 'd': "+str(state))
         #print("RETURN STATE FROM RESULT: "+str(state))
         return state
+
+        if (self.mapa.is_blocked((x_sokoban, y_sokoban))):
+             x_sokoban, y_sokoban = state[0]
 
     # Custo de cada movimento
     def cost(self, state, action):
