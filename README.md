@@ -1,5 +1,4 @@
-# iia-ia-sokoban
-Sokoban clone for AI teaching
+# Sokoban clone for AI teaching
 
 ![Demo](https://github.com/dgomes/iia-ia-sokoban/raw/master/data/sokoban_screenshot.png)
 
